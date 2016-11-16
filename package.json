@@ -1,0 +1,28 @@
+{
+  "name": "deep-condition",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --bail ./test/**/*",
+    "lint": "eslint ./"
+  },
+  "keywords": [
+    "deep",
+    "condition",
+    "nested",
+    "if",
+    "else",
+    "statement"
+  ],
+  "author": "Mikhail Vyrodov",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "3.10.0",
+    "eslint-config-dvpnt": "1.2.0",
+    "expect.js": "0.3.1",
+    "mocha": "3.1.2",
+    "nrun": "0.1.7",
+    "underscore": "1.8.3"
+  }
+}
