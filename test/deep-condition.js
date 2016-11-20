@@ -141,4 +141,55 @@ describe('Deep condition test', function() {
 			expect(indicator).to.be(true);
 		});
 	});
+
+	describe('Condition pattern', function() {
+		describe('Pattern call', function() {
+			it('Set default condition pattern with rigth condition', function() {
+				var indicator = helpers.createIndicator([false]),
+					patternIndicator;
+
+				var conditionResult = deepConditionWrapper({
+					condition: true,
+					pattern: function(_condition) {
+						patternIndicator = true;
+						return !_condition;
+					}
+				}, noop);
+
+				expect(patternIndicator).to.be(true);
+				expect(conditionResult).to.eql(indicator);
+			});
+
+			it('Set default condition pattern with wrong condition', function() {
+				var indicator = helpers.createIndicator([true]),
+					patternIndicator;
+
+				var conditionResult = deepConditionWrapper({
+					condition: false,
+					pattern: function(_condition) {
+						patternIndicator = true;
+						return !_condition;
+					}
+				}, noop);
+
+				expect(patternIndicator).to.be(true);
+				expect(conditionResult).to.eql(indicator);
+			});
+		});
+
+		describe('Getting condition inside pattern', function() {
+			var conditions = [1, 'hello', [], {}, true, 0, '', null, void 0, false];
+
+			_(conditions).each(function(condition) {
+				it('condition: ' + condition, function() {
+					deepConditionWrapper({
+						condition: condition,
+						pattern: function(_condition) {
+							expect(condition).to.eql(_condition);
+						}
+					}, noop);
+				});
+			});
+		});
+	});
 });
