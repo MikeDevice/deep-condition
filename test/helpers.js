@@ -1,29 +1,47 @@
 'use strict';
 
 var _ = require('underscore'),
-	deepCondition = require('../lib/deep-condition'),
-	expect = require('expect.js');
+	deepCondition = require('../lib/deep-condition');
 
-var wrapFunctions = function(indicatorHash, functionsHashes) {
-	return _(functionsHashes).map(function(hash, index) {
-		return function() {
-			hash.func.call(this);
-			indicatorHash[index] = true;
-		};
-	});
+var slice = Array.prototype.slice;
+
+exports.createIndicator = function(values) {
+	var indicator = {};
+
+	if (_.isArray(values)) {
+		_(values).each(function(value, index) {
+			indicator[index] = value;
+		});
+	} else {
+		_(_.range(values)).each(function(value, index) {
+			indicator[index] = false;
+		});
+	}
+
+	return indicator;
 };
 
-exports.checkDeepCondition = function(params, functionsHashes) {
-	var indicatorHash = {};
-	var functions = wrapFunctions(indicatorHash, functionsHashes);
+exports.deepConditionWrapper = function(params) {
+	var functions;
+
+	if (typeof params === 'function') {
+		params = {};
+		functions = slice.call(arguments);
+	} else {
+		params = _.first(slice.call(arguments, 0, 1));
+		functions = slice.call(arguments, 1);
+	}
+
+	var indicator = exports.createIndicator(functions.length);
+
+	functions = _(functions).map(function(func, index) {
+		return function() {
+			func.apply(this, arguments);
+			indicator[index] = true;
+		};
+	});
 
 	deepCondition.apply(null, [params].concat(functions));
 
-	_(functionsHashes).each(function(hash, index) {
-		if (hash.shouldCalled) {
-			expect(indicatorHash[index]).to.be(true);
-		} else {
-			expect(indicatorHash[index]).to.be(void 0);
-		}
-	});
+	return indicator;
 };

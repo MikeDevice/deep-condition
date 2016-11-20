@@ -1,72 +1,144 @@
 'use strict';
 
 var _ = require('underscore'),
+	expect = require('expect.js'),
 	helpers = require('./helpers');
 
-var noop = function() {};
+var noop = _.noop;
 
 describe('Deep condition test', function() {
-	describe('Call all functions', function() {
-		var functionsHashes = [{
-			shouldCalled: true,
-			func: noop
-		}, {
-			shouldCalled: true,
-			func: noop
-		}];
+	var deepConditionWrapper = helpers.deepConditionWrapper;
 
-		it('Without params', function() {
-			helpers.checkDeepCondition({}, functionsHashes);
+	describe('Functions call', function() {
+		it('All conditions are true', function() {
+			var indicator = helpers.createIndicator([true, true, true]);
+
+			var conditionResult = deepConditionWrapper(noop, noop, noop);
+
+			expect(conditionResult).to.eql(indicator);
 		});
 
-		_([true, 1, 'hello', noop]).each(function(condition) {
-			it('With true condition: ' + condition, function() {
-				helpers.checkDeepCondition({
-					condition: condition
-				}, functionsHashes);
-			});
+		it('Default condition is false', function() {
+			var indicator = helpers.createIndicator([false, false, false]);
+
+			var conditionResult = deepConditionWrapper({
+				condition: false
+			}, noop, noop, noop);
+
+			expect(conditionResult).to.eql(indicator);
 		});
 
-		it('Set custom condition', function() {
-			helpers.checkDeepCondition({}, [{
-				shouldCalled: true,
-				func: function() {
-					this.nextCondition(true);
+		it('Set false condition in first function', function() {
+			var indicator = helpers.createIndicator([true, false, false]);
+
+			var conditionResult = deepConditionWrapper(
+				function() {
+					this.nextCondition(false);
+				},
+				noop,
+				noop
+			);
+
+			expect(conditionResult).to.eql(indicator);
+		});
+
+		it('Set false condition in second function', function() {
+			var indicator = helpers.createIndicator([true, true, false]);
+
+			var conditionResult = deepConditionWrapper(
+				noop,
+				function() {
+					this.nextCondition(false);
+				},
+				noop
+			);
+
+			expect(conditionResult).to.eql(indicator);
+		});
+
+		it('Set false condition in last function', function() {
+			var indicator = helpers.createIndicator([true, true, true]);
+
+			var conditionResult = deepConditionWrapper(
+				noop,
+				noop,
+				function() {
+					this.nextCondition(false);
 				}
-			}, {
-				shouldCalled: true,
-				func: noop
-			}]);
+			);
+
+			expect(conditionResult).to.eql(indicator);
 		});
 	});
 
-	describe('Call not all functions', function() {
-		it('First condition is false', function() {
-			var functionsHashes = [{
-				shouldCalled: false,
-				func: noop
-			}, {
-				shouldCalled: false,
-				func: noop
-			}];
+	describe('Conditions', function() {
+		describe('Rigth conditions', function() {
+			var conditions = [{}, [], 10, 'hello', true];
 
-			helpers.checkDeepCondition({
-				condition: false
-			}, functionsHashes);
+			_(conditions).each(function(condition) {
+				it('Set condition: ' + condition, function() {
+					var indicator = helpers.createIndicator([true, true, true]);
+
+					var conditionResult = deepConditionWrapper(
+						function() {
+							this.nextCondition(condition);
+						},
+						noop,
+						noop
+					);
+
+					expect(conditionResult).to.eql(indicator);
+				});
+			});
 		});
 
-		it('Set custom false condition to first function', function() {
-			var functionsHashes = [{
-				shouldCalled: true,
-				func: function() {
-					this.nextCondition(false);
-				}
-			}, {
-				shouldCalled: false,
-				func: noop
-			}];
+		describe('Wrong conditions', function() {
+			var conditions = [null, void 0, NaN, '', 0, false];
 
-			helpers.checkDeepCondition({}, functionsHashes);
+			_(conditions).each(function(condition) {
+				it('Set condition: ' + condition, function() {
+					var indicator = helpers.createIndicator([true, false, false]);
+
+					var conditionResult = deepConditionWrapper(
+						function() {
+							this.nextCondition(condition);
+						},
+						noop,
+						noop
+					);
+
+					expect(conditionResult).to.eql(indicator);
+				});
+			});
+		});
+	});
+
+	describe('Else statement', function() {
+		it('Set default custom else statement', function() {
+			var indicator;
+
+			deepConditionWrapper({
+				condition: false,
+				elseStatement: function() {indicator = true;}
+			}, noop);
+
+			expect(indicator).to.be(true);
+		});
+
+		it('Set custom else statement in function', function() {
+			var indicator;
+
+			deepConditionWrapper(
+				function() {
+					this.nextCondition(false);
+					this.nextElseStatement(function() {
+						indicator = true;
+					});
+				},
+				noop
+			);
+
+			expect(indicator).to.be(true);
 		});
 	});
 });
